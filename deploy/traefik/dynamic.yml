@@ -1,0 +1,11 @@
+http:
+  middlewares:
+    tenant-defaults:
+      headers:
+        customFrameOptionsValue: SAMEORIGIN
+        browserXssFilter: true
+        contentTypeNosniff: true
+        referrerPolicy: no-referrer
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true

@@ -1,0 +1,24 @@
+tenants:
+  dholbrook-5534:
+    openclawVersion: 2026.3.24
+    secrets:
+      GEMINI_API_KEY: ""
+      GEMINI_CLI_API_KEY: ""
+      HERMES_OPENAI_API_KEY: ""
+      CODEX_OPENAI_API_KEY: ""
+      CLAUDE_ANTHROPIC_API_KEY: ""
+      OPENROUTER_API_KEY: ""
+    models:
+      allowed:
+        - openai-codex/gpt-5.4
+      primary: openai-codex/gpt-5.4
+      fallbacks: []
+    agents:
+      main:
+        model: openai-codex/gpt-5.4
+    providers:
+      google:
+        hydrateAuth: false
+    routes:
+      gemini:
+        enabled: false

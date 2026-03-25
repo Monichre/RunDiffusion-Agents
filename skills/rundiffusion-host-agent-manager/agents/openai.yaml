@@ -1,0 +1,4 @@
+interface:
+  display_name: "RunDiffusion Multi-Tenant Manager"
+  short_description: "Manage multi-tenant shared-host agents"
+  default_prompt: "Use $rundiffusion-host-agent-manager for the RunDiffusion Agents multi-tenant host stack. Inspect the repo and env first, including any host-side control-plane override YAML from TENANT_CONTROL_PLANE_CONFIG_PATH, infer local vs remote and Cloudflare vs direct when possible, ask only if the environment is ambiguous, and use the repo-root tenant scripts plus the generated tenant env and managed override files."

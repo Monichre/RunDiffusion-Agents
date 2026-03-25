@@ -1,0 +1,41 @@
+services:
+  openclaw-gateway:
+    image: ${OPENCLAW_IMAGE}
+    restart: unless-stopped
+    env_file:
+      - ${TENANT_ENV_FILE}
+      - ${TENANT_MANAGED_ENV_FILE}
+    mem_limit: ${TENANT_MEMORY_LIMIT:-3072m}
+    mem_reservation: ${TENANT_MEMORY_RESERVATION:-1536m}
+    pids_limit: ${TENANT_PIDS_LIMIT:-512}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bash -c 'test -s \"${OPENCLAW_RECONCILE_SUMMARY_PATH:-/data/.openclaw/reconcile-summary.json}\" && curl -fsS --max-time 5 \"http://127.0.0.1:${PORT:-8080}/healthz\" >/dev/null'",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - type: bind
+        source: ${TENANT_DATA_ROOT}/gateway
+        target: /data
+    networks:
+      ingress:
+        aliases:
+          - ${TENANT_SLUG}-gateway
+      tenant:
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+networks:
+  ingress:
+    external: true
+    name: ${TRAEFIK_NETWORK}
+  tenant:
+    name: ${COMPOSE_PROJECT_NAME:-rundiffusion-agents}-${TENANT_SLUG}-internal

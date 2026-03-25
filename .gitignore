@@ -1,0 +1,18 @@
+.DS_Store
+node_modules
+*.log
+.env
+services/rundiffusion-agents/.env
+services/rundiffusion-agents/dashboard/dist/
+
+# Local machine/stateful tooling data
+.local-openclaw-data/
+services/rundiffusion-agents/.claude/
+.env.local
+.env.*.local
+.data/
+.generated/
+.claude/
+deploy/tenants/env/
+deploy/tenants/generated/
+deploy/tenants/tenants.yml

@@ -1,0 +1,36 @@
+RunDiffusion Agents
+Copyright 2026 RunDiffusion
+
+This repository is licensed under the Apache License, Version 2.0.
+This product includes software originally developed by RunDiffusion as
+RunDiffusion Agents.
+
+Important third-party notice:
+
+This repository bundles, installs, launches, or interoperates with third-party
+software and third-party APIs. The Apache-2.0 license for this repository applies
+to RunDiffusion's original code in this repository only. It does not relicense
+third-party software, grant rights to third-party trademarks, or grant access to
+third-party APIs or hosted services.
+
+Notable third-party components referenced by the current build and release docs
+include:
+
+- OpenClaw (MIT)
+- Hermes Agent (MIT)
+- OpenAI Codex CLI (Apache-2.0), plus separate OpenAI service terms when used
+  against OpenAI-hosted models or APIs
+- Google Gemini CLI (Apache-2.0), plus separate Google service terms when used
+  against Google-hosted models or APIs
+- Claude Code (subject to Anthropic Commercial Terms; not open-source software)
+- FileBrowser Quantum (Apache-2.0)
+- Traefik (MIT)
+- cloudflared (Apache-2.0)
+- tailscale (BSD-3-Clause)
+- ttyd (MIT)
+- Homebrew/brew (BSD-2-Clause)
+
+If you redistribute images, builds, or modified versions of this project, you are
+responsible for reviewing and complying with the license and attribution
+obligations of any bundled or referenced third-party components, including
+component-specific notices and any separate service/API terms.

@@ -1,0 +1,25 @@
+<svg width="1200" height="1200" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="364" y="84" width="338" height="220" rx="34" transform="skewX(30)" fill="url(#topGradient)"/>
+  <rect x="725" y="438" width="338" height="220" rx="34" transform="skewX(30)" fill="url(#rightGradient)"/>
+  <rect x="364" y="730" width="338" height="220" rx="34" transform="skewX(30)" fill="url(#bottomGradient)"/>
+  <rect x="0" y="592" width="252" height="362" rx="42" transform="skewY(-30)" fill="url(#leftGradient)"/>
+
+  <defs>
+    <linearGradient id="topGradient" x1="587" y1="127" x2="587" y2="337" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C658CB"/>
+      <stop offset="1" stop-color="#B757CF"/>
+    </linearGradient>
+    <linearGradient id="rightGradient" x1="1041" y1="456" x2="1041" y2="670" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9B6AE3"/>
+      <stop offset="1" stop-color="#8F63D7"/>
+    </linearGradient>
+    <linearGradient id="bottomGradient" x1="595" y1="736" x2="595" y2="950" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A9ABF1"/>
+      <stop offset="1" stop-color="#9EA2EB"/>
+    </linearGradient>
+    <linearGradient id="leftGradient" x1="143" y1="776" x2="143" y2="1206" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A191E2"/>
+      <stop offset="1" stop-color="#9986D8"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -1,0 +1,24 @@
+services:
+  openclaw-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: local/openclaw-gateway:latest
+    container_name: ${STANDALONE_CONTAINER_NAME:-rd-agents-standalone-local}
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${STANDALONE_BIND_ADDRESS:-127.0.0.1}:${STANDALONE_PUBLIC_PORT:-8080}:8080"
+    volumes:
+      - standalone-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  standalone-data:
+    name: ${STANDALONE_DATA_VOLUME:-rd-agents-standalone-local-data}

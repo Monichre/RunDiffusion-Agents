@@ -1,0 +1,12 @@
+# Rendered configs belong outside git, but this shows the expected shape.
+# The helper scripts can render a live version at:
+#   ${DATA_ROOT}/cloudflared/config.yml
+
+tunnel: __CLOUDFLARE_TUNNEL_ID__
+credentials-file: __CLOUDFLARE_TUNNEL_CREDENTIALS_FILE__
+metrics: __CLOUDFLARE_TUNNEL_METRICS__
+
+ingress:
+  - hostname: "*.__BASE_DOMAIN__"
+    service: http://127.0.0.1:__TRAEFIK_HTTP_PORT__
+  - service: http_status:404

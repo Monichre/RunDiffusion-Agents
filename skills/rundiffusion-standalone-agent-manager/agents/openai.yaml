@@ -1,0 +1,4 @@
+interface:
+  display_name: "RunDiffusion Standalone Manager"
+  short_description: "Manage single-tenant local or remote agents"
+  default_prompt: "Use $rundiffusion-standalone-agent-manager for the RunDiffusion Agents standalone single-tenant package. Inspect the repo and env first, infer local vs remote and Cloudflare vs direct when possible, ask only if the environment is ambiguous, and use the Docker Compose flow under services/rundiffusion-agents."

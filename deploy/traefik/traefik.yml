@@ -1,0 +1,15 @@
+entryPoints:
+  web:
+    address: ":80"
+
+ping: {}
+
+api:
+  dashboard: false
+
+providers:
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+accessLog: {}
