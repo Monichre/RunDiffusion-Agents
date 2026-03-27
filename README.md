@@ -12,6 +12,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License: Apache-2.0"></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white" alt="Docker Ready"></a>
   <a href="https://discord.com/invite/wH6dTyBpCf"><img src="https://img.shields.io/badge/Discord-35k%2B_members-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://www.linkedin.com/company/rundiffusion/?viewAsMember=true"><img src="https://img.shields.io/badge/LinkedIn-RunDiffusion-0A66C2?logo=linkedin&logoColor=white" alt="LinkedIn"></a>
   <img src="https://img.shields.io/badge/status-production-brightgreen" alt="Production Status">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL2-lightgrey" alt="Platform: macOS | Linux | WSL2">
 </p>
