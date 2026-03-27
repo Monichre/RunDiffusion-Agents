@@ -81,6 +81,10 @@
 </table>
 </div>
 
+<p align="center">
+  <img src="images/OpenClaw.png" alt="OpenClaw running inside RunDiffusion Agents" width="100%">
+</p>
+
 ---
 
 ## 🔥 Why This Exists
