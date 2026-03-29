@@ -135,7 +135,7 @@ tenants:
 
     routes:
       gemini:
-        enabled: false # Feature-flag any tool on or off per tenant
+        enabled: true # Feature-flag any tool on or off per tenant
 ```
 
 **What you control from one file:**
@@ -562,6 +562,7 @@ Your entire agent farm is secured by Basic Auth, with robust device pairing for 
 
 | Guide                                                            | Description                                            |
 | ---------------------------------------------------------------- | ------------------------------------------------------ |
+| [Multi-Agent Traefik Quickstart](docs/multi-agent-traefik-quickstart.md) | **Recommended** — all agents on a shared host with Traefik |
 | [Deployment Matrix](docs/deployment-matrix.md)                   | Choose the right deployment shape for your environment |
 | [Standalone Host Quickstart](docs/standalone-host-quickstart.md) | Single-tenant from zero to running                     |
 | [Multi-Tenant Deployment](deploy/README.md)                      | Shared host stack with Traefik & ingress modes         |
