@@ -66,6 +66,7 @@ GEMINI_SESSION_NAME="${GEMINI_SESSION_NAME:-gemini}"
 GEMINI_HOME="${GEMINI_HOME:-/data/.gemini}"
 GEMINI_WORKSPACE_DIR="${GEMINI_WORKSPACE_DIR:-/data/workspaces/gemini}"
 GEMINI_CLI_API_KEY="${GEMINI_CLI_API_KEY:-}"
+AGENT_STATUS_DIR="${AGENT_STATUS_DIR:-/data/runtime/agent-status}"
 OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}"
 TAILSCALE_ENABLED="${TAILSCALE_ENABLED:-0}"
 TAILSCALE_STATE_DIR="${TAILSCALE_STATE_DIR:-/var/lib/tailscale}"
@@ -243,6 +244,7 @@ export GEMINI_SESSION_NAME
 export GEMINI_HOME
 export GEMINI_WORKSPACE_DIR
 export GEMINI_CLI_API_KEY
+export AGENT_STATUS_DIR
 export OPENROUTER_API_KEY
 export TAILSCALE_SOCKET
 export TAILSCALE_STATE_DIR
@@ -934,6 +936,8 @@ reconcile_gateway_state() {
 
 reconcile_gateway_state
 echo "[entrypoint] Gateway config reconciliation complete."
+
+mkdir -p "${AGENT_STATUS_DIR}"
 
 if hermes_enabled && ! is_true "${HERMES_AUTO_LAUNCH}"; then
   echo "[entrypoint] HERMES_AUTO_LAUNCH is deprecated and ignored; use HERMES_ENABLED=0 to disable /hermes."

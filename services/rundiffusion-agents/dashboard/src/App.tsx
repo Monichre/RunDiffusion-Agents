@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 
 import { AppShell } from "./components/app-shell";
-import { ToolFrame, type ToolDefinition } from "./components/tool-frame";
+import {
+  ToolFrame,
+  type ToolActionResult,
+  type ToolDefinition,
+  type ToolRuntimeStatus,
+} from "./components/tool-frame";
 import {
   UtilitiesPanel,
   type ActionResult,
@@ -23,6 +28,7 @@ type DashboardConfig = {
 };
 
 const CONFIG_ENDPOINT = "/dashboard-api/config";
+const TOOL_STATUS_ENDPOINT = "/dashboard-api/tools/status";
 const DEVICE_APPROVALS_ENDPOINT = "/dashboard-api/utilities/device-approvals";
 const RESTART_ENDPOINT = "/dashboard-api/utilities/restart-gateway";
 
@@ -111,12 +117,14 @@ export default function App() {
   const [config, setConfig] = useState<DashboardConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string>("");
+  const [toolStatuses, setToolStatuses] = useState<Record<string, ToolRuntimeStatus>>({});
   const [deviceApprovals, setDeviceApprovals] = useState<DeviceApproval[]>([]);
   const [isLoadingApprovals, setIsLoadingApprovals] = useState(false);
   const [approvalsError, setApprovalsError] = useState<string | null>(null);
   const [approvingRequestId, setApprovingRequestId] = useState<string | null>(null);
   const [busyActionId, setBusyActionId] = useState<string | null>(null);
   const [actionResult, setActionResult] = useState<ActionResult>(null);
+  const [toolActionResult, setToolActionResult] = useState<ToolActionResult>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -174,6 +182,15 @@ export default function App() {
     }
   }, []);
 
+  const refreshToolStatuses = useCallback(async () => {
+    try {
+      const response = await fetchJson<{ statuses: Record<string, ToolRuntimeStatus> }>(TOOL_STATUS_ENDPOINT);
+      setToolStatuses(response.statuses && typeof response.statuses === "object" ? response.statuses : {});
+    } catch {
+      setToolStatuses({});
+    }
+  }, []);
+
   const approveRequest = useCallback(
     async (requestId: string) => {
       setApprovingRequestId(requestId);
@@ -226,6 +243,35 @@ export default function App() {
     }
   }, []);
 
+  const relaunchTool = useCallback(
+    async (toolId: string) => {
+      setBusyActionId(`relaunch:${toolId}`);
+      setToolActionResult(null);
+
+      try {
+        const response = await fetchJson<{ summary: string; status?: ToolRuntimeStatus }>(
+          `/dashboard-api/tools/${encodeURIComponent(toolId)}/relaunch`,
+          { method: "POST" },
+        );
+        setToolActionResult({
+          kind: "success",
+          title: "Relaunch requested",
+          detail: response.status?.detail || response.summary,
+        });
+        await refreshToolStatuses();
+      } catch (error) {
+        setToolActionResult({
+          kind: "error",
+          title: "Relaunch failed",
+          detail: error instanceof Error ? error.message : "Unknown relaunch error.",
+        });
+      } finally {
+        setBusyActionId(null);
+      }
+    },
+    [refreshToolStatuses],
+  );
+
   const selectedTool = useMemo(
     () => config?.tools.find((tool) => tool.id === selectedId) ?? null,
     [config, selectedId],
@@ -247,6 +293,28 @@ export default function App() {
     }
   }, [refreshApprovals, selectedUtility?.id]);
 
+  useEffect(() => {
+    if (!config) return;
+
+    void refreshToolStatuses();
+    const intervalId = window.setInterval(() => {
+      void refreshToolStatuses();
+    }, 15000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [config, refreshToolStatuses]);
+
+  const toolsWithStatuses = useMemo(
+    () =>
+      config?.tools.map((tool) => ({
+        ...tool,
+        runtimeStatus: toolStatuses[tool.id] || null,
+      })) ?? [],
+    [config?.tools, toolStatuses],
+  );
+
   if (!config && !configError) return <LoadingScreen />;
   if (!config) return <ErrorScreen message={configError || "Unknown dashboard load error."} />;
 
@@ -257,7 +325,7 @@ export default function App() {
       titleSuffix={config.titleSuffix}
       title={config.title}
       subtitle={config.subtitle}
-      tools={config.tools}
+      tools={toolsWithStatuses}
       utilities={config.utilities}
       selectedId={selectedId}
       onSelect={selectView}
@@ -269,6 +337,9 @@ export default function App() {
           openclawAccessMode={config.openclawAccessMode}
           busyActionId={busyActionId}
           onRestartOpenClaw={restartOpenClaw}
+          runtimeStatus={toolStatuses[selectedTool.id] || null}
+          actionResult={toolActionResult}
+          onRelaunchTool={relaunchTool}
         />
       ) : selectedUtility ? (
         <UtilitiesPanel

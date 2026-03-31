@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ChevronRight, CircleUserRound, LayoutGrid, Wrench } from "lucide-react";
 
 import { cn } from "../lib/utils";
+import type { ToolRuntimeStatus } from "./tool-frame";
 
 const BRAND_LOGO_PATH = `${import.meta.env.BASE_URL}rundiffusion-agents-logo.png`;
 
@@ -10,6 +11,7 @@ type NavigationItem = {
   label: string;
   description: string;
   enabled?: boolean;
+  runtimeStatus?: ToolRuntimeStatus | null;
 };
 
 type AppShellProps = {
@@ -68,6 +70,23 @@ function NavigationSection({
                 <div className="truncate text-sm font-medium">{item.label}</div>
                 {!compact ? (
                   <div className="mt-1 text-xs leading-5 text-zinc-500">{item.description}</div>
+                ) : null}
+                {item.runtimeStatus ? (
+                  <div className="mt-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+                    <span
+                      className={cn(
+                        "inline-flex h-2 w-2 rounded-full",
+                        item.runtimeStatus.phase === "running"
+                          ? "bg-emerald-300"
+                          : item.runtimeStatus.phase === "starting"
+                            ? "bg-amber-300"
+                            : item.runtimeStatus.phase === "disabled"
+                              ? "bg-zinc-600"
+                              : "bg-zinc-400",
+                      )}
+                    />
+                    <span>{item.runtimeStatus.summary}</span>
+                  </div>
                 ) : null}
               </div>
               <div className="mt-0.5 flex shrink-0 items-center gap-2">

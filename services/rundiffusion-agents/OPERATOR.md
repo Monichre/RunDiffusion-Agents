@@ -69,6 +69,8 @@ Repeated retries before approval can trigger rate limiting (`Too many unauthoriz
 
 - Left sidebar: OpenClaw, Hermes, Codex, Claude Code, Gemini, Terminal, FileBrowser
 - Same-origin embedded views for sibling tools
+- Runtime badges for the dedicated agent terminals so you can see whether each route is live, waiting for login, or sitting in shell fallback
+- Relaunch buttons for Hermes, Codex, Claude Code, and Gemini without leaving the dashboard
 - "Open in new tab" escape hatches for every tool
 - Utilities section with device approval and gateway restart helpers
 
@@ -137,6 +139,8 @@ All terminal routes share: `nginx` → `ttyd`/`xterm.js` → `tmux` → target s
 Defaults: `xterm-256color`, DOM renderer, system monospace font, size 14, 50k scrollback, `C.UTF-8`, truecolor.
 
 Override these envs at deploy time instead of forking launcher scripts.
+
+Dedicated agent launchers also publish runtime snapshots under `${AGENT_STATUS_DIR:-/data/runtime/agent-status}` so the dashboard can reflect current launcher state.
 
 ---
 
