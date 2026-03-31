@@ -43,7 +43,7 @@ TERMINAL_BASIC_AUTH_PASSWORD=<separate-terminal-password>
 HERMES_ENABLED=1
 CODEX_ENABLED=1
 CLAUDE_ENABLED=1
-GEMINI_ENABLED=0
+GEMINI_ENABLED=1
 ```
 
 `OPENCLAW_CONTROL_UI_ALLOWED_ORIGINS` is optional when `RAILWAY_PUBLIC_DOMAIN` matches the browser origin. Set it explicitly for custom domains, multiple origins, or any host where you prefer an exact allowlist. For the recommended local Docker path: `http://127.0.0.1:8080,http://localhost:8080`.

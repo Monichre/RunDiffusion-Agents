@@ -21,4 +21,4 @@ tenants:
         hydrateAuth: false
     routes:
       gemini:
-        enabled: false
+        enabled: true
