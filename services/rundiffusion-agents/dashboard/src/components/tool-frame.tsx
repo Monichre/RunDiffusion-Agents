@@ -71,6 +71,17 @@ function runtimeBadgeVariant(phase: string): "success" | "warning" | "muted" {
   return "muted";
 }
 
+function formatRuntimeTimestamp(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "medium",
+    timeZone: "UTC",
+  }).format(date);
+}
+
 export function ToolFrame({
   brandName,
   tool,
@@ -113,7 +124,7 @@ export function ToolFrame({
               {showRuntimeActions ? (
                 <CardDescription className="mt-3 max-w-4xl text-zinc-300">
                   {runtimeStatus.detail}
-                  {runtimeStatus.updatedAt ? ` Last update: ${new Date(runtimeStatus.updatedAt).toLocaleString()}.` : ""}
+                  {runtimeStatus.updatedAt ? ` Last update: ${formatRuntimeTimestamp(runtimeStatus.updatedAt)} UTC.` : ""}
                 </CardDescription>
               ) : null}
             </div>

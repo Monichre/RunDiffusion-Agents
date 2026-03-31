@@ -31,6 +31,7 @@ const CONFIG_ENDPOINT = "/dashboard-api/config";
 const TOOL_STATUS_ENDPOINT = "/dashboard-api/tools/status";
 const DEVICE_APPROVALS_ENDPOINT = "/dashboard-api/utilities/device-approvals";
 const RESTART_ENDPOINT = "/dashboard-api/utilities/restart-gateway";
+const TOOL_STATUS_POLL_INTERVAL_MS = 15_000;
 
 function composeDocumentTitle(viewLabel: string, tenantLabel: string, titleSuffix: string) {
   return `${viewLabel} | ${tenantLabel} | ${titleSuffix}`;
@@ -299,7 +300,7 @@ export default function App() {
     void refreshToolStatuses();
     const intervalId = window.setInterval(() => {
       void refreshToolStatuses();
-    }, 15000);
+    }, TOOL_STATUS_POLL_INTERVAL_MS);
 
     return () => {
       window.clearInterval(intervalId);
