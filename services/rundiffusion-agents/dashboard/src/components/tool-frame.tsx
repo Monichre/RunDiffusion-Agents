@@ -32,8 +32,27 @@ export type ToolDefinition = {
   description: string;
   path: string;
   enabled: boolean;
+  supportsRuntimeActions?: boolean;
   help?: ToolHelpDefinition | null;
 };
+
+export type ToolRuntimeStatus = {
+  toolId: string;
+  supported: boolean;
+  enabled: boolean;
+  canRelaunch: boolean;
+  phase: string;
+  mode: string;
+  summary: string;
+  detail: string;
+  updatedAt: string | null;
+};
+
+export type ToolActionResult = {
+  kind: "success" | "error";
+  title: string;
+  detail?: string;
+} | null;
 
 type ToolFrameProps = {
   brandName: string;
@@ -41,11 +60,42 @@ type ToolFrameProps = {
   openclawAccessMode: string;
   busyActionId?: string | null;
   onRestartOpenClaw?: () => Promise<void> | void;
+  runtimeStatus?: ToolRuntimeStatus | null;
+  actionResult?: ToolActionResult;
+  onRelaunchTool?: (toolId: string) => Promise<void> | void;
 };
 
-export function ToolFrame({ brandName, tool, openclawAccessMode, busyActionId, onRestartOpenClaw }: ToolFrameProps) {
+function runtimeBadgeVariant(phase: string): "success" | "warning" | "muted" {
+  if (phase === "running") return "success";
+  if (phase === "starting") return "warning";
+  return "muted";
+}
+
+function formatRuntimeTimestamp(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "medium",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+export function ToolFrame({
+  brandName,
+  tool,
+  openclawAccessMode,
+  busyActionId,
+  onRestartOpenClaw,
+  runtimeStatus,
+  actionResult,
+  onRelaunchTool,
+}: ToolFrameProps) {
   const isOpenClaw = tool.id === "openclaw";
   const isRestartingOpenClaw = busyActionId === "restart-openclaw";
+  const isRelaunchingTool = busyActionId === `relaunch:${tool.id}`;
+  const showRuntimeActions = Boolean(tool.supportsRuntimeActions && runtimeStatus?.supported);
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-5">
@@ -57,6 +107,9 @@ export function ToolFrame({ brandName, tool, openclawAccessMode, busyActionId, o
               {isOpenClaw ? (
                 <Badge variant="warning">{openclawAccessMode === "native" ? "Native auth" : "Proxy auth"}</Badge>
               ) : null}
+              {showRuntimeActions ? (
+                <Badge variant={runtimeBadgeVariant(runtimeStatus.phase)}>{runtimeStatus.summary}</Badge>
+              ) : null}
             </div>
             <div>
               <CardTitle className="text-2xl">{tool.label}</CardTitle>
@@ -66,6 +119,12 @@ export function ToolFrame({ brandName, tool, openclawAccessMode, busyActionId, o
                   OpenClaw stays on its existing native auth flow here. If the embedded view asks you to
                   connect or pair a device, that is expected. The other operator tools share the
                   dashboard&apos;s Basic Auth more directly than OpenClaw does.
+                </CardDescription>
+              ) : null}
+              {showRuntimeActions ? (
+                <CardDescription className="mt-3 max-w-4xl text-zinc-300">
+                  {runtimeStatus.detail}
+                  {runtimeStatus.updatedAt ? ` Last update: ${formatRuntimeTimestamp(runtimeStatus.updatedAt)} UTC.` : ""}
                 </CardDescription>
               ) : null}
             </div>
@@ -83,6 +142,12 @@ export function ToolFrame({ brandName, tool, openclawAccessMode, busyActionId, o
                 Restart OpenClaw
               </Button>
             ) : null}
+            {showRuntimeActions ? (
+              <Button variant="secondary" onClick={() => void onRelaunchTool?.(tool.id)} disabled={isRelaunchingTool}>
+                <Wrench className="h-4 w-4" />
+                {isRelaunchingTool ? "Relaunching…" : `Relaunch ${tool.label}`}
+              </Button>
+            ) : null}
             <Button
               className="shrink-0"
               variant="outline"
@@ -96,6 +161,17 @@ export function ToolFrame({ brandName, tool, openclawAccessMode, busyActionId, o
           </div>
         </CardHeader>
       </Card>
+
+      {actionResult ? (
+        <Card className={actionResult.kind === "success" ? "border-emerald-400/30" : "border-rose-400/30"}>
+          <CardContent className="px-6 py-4">
+            <div className={actionResult.kind === "success" ? "text-sm font-medium text-emerald-200" : "text-sm font-medium text-rose-200"}>
+              {actionResult.title}
+            </div>
+            {actionResult.detail ? <p className="mt-2 text-sm leading-6 text-zinc-300">{actionResult.detail}</p> : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {!tool.enabled ? (
         <Card className="flex-1">

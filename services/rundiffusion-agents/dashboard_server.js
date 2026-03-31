@@ -13,8 +13,47 @@ const DEFAULT_DASHBOARD_BASE_URL = "/dashboard";
 const DEFAULT_API_BASE_URL = "/dashboard-api";
 const DEFAULT_DASHBOARD_PORT = 8094;
 const DEFAULT_STATIC_DIR = path.join(__dirname, "dashboard", "dist");
+const DEFAULT_AGENT_STATUS_DIR = "/data/runtime/agent-status";
 const BRAND_NAME = "Run";
 const TITLE_SUFFIX = "RunDiffusion Agents";
+const TOOL_RUNTIME_SPECS = {
+  hermes: {
+    label: "Hermes",
+    enabledEnv: "HERMES_ENABLED",
+    sessionNameEnv: "HERMES_SESSION_NAME",
+    workspaceEnv: "HERMES_WORKSPACE_DIR",
+    defaultSessionName: "hermes",
+    defaultWorkspaceDir: "/data/workspaces/hermes",
+    launchCommand: "/app/launch_hermes_terminal.sh",
+  },
+  codex: {
+    label: "Codex",
+    enabledEnv: "CODEX_ENABLED",
+    sessionNameEnv: "CODEX_SESSION_NAME",
+    workspaceEnv: "CODEX_WORKSPACE_DIR",
+    defaultSessionName: "codex",
+    defaultWorkspaceDir: "/data/workspaces/codex",
+    launchCommand: "/app/launch_codex_terminal.sh",
+  },
+  claude: {
+    label: "Claude Code",
+    enabledEnv: "CLAUDE_ENABLED",
+    sessionNameEnv: "CLAUDE_SESSION_NAME",
+    workspaceEnv: "CLAUDE_WORKSPACE_DIR",
+    defaultSessionName: "claude",
+    defaultWorkspaceDir: "/data/workspaces/claude",
+    launchCommand: "/app/launch_claude_terminal.sh",
+  },
+  gemini: {
+    label: "Gemini",
+    enabledEnv: "GEMINI_ENABLED",
+    sessionNameEnv: "GEMINI_SESSION_NAME",
+    workspaceEnv: "GEMINI_WORKSPACE_DIR",
+    defaultSessionName: "gemini",
+    defaultWorkspaceDir: "/data/workspaces/gemini",
+    launchCommand: "/app/launch_gemini_terminal.sh",
+  },
+};
 
 function normalizeBaseUrl(label, value) {
   const text = String(value || "").trim();
@@ -45,6 +84,172 @@ function readCommandJson(command, args, env) {
     stdio: ["ignore", "pipe", "pipe"],
   });
   return JSON.parse(output);
+}
+
+function buildToolRuntimeCatalog(env = process.env) {
+  const statusDir = normalizeText(env.AGENT_STATUS_DIR, DEFAULT_AGENT_STATUS_DIR);
+  return Object.entries(TOOL_RUNTIME_SPECS).reduce((catalog, [toolId, spec]) => {
+    catalog[toolId] = {
+      ...spec,
+      id: toolId,
+      enabled: envFlagEnabled(env[spec.enabledEnv] ?? "1"),
+      sessionName: normalizeText(env[spec.sessionNameEnv], spec.defaultSessionName),
+      workspaceDir: normalizeText(env[spec.workspaceEnv], spec.defaultWorkspaceDir),
+      statusPath: path.join(statusDir, `${toolId}.json`),
+    };
+    return catalog;
+  }, {});
+}
+
+function normalizeToolRuntimeStatus(toolRuntime, payload) {
+  const updatedAt = normalizeText(payload?.updatedAt);
+  const phase = normalizeText(payload?.phase, "unknown");
+  const mode = normalizeText(payload?.mode, phase === "running" ? "cli" : "unknown");
+  const summary =
+    normalizeText(payload?.summary) ||
+    (phase === "running"
+      ? `${toolRuntime.label} CLI running`
+      : phase === "starting"
+        ? `Starting ${toolRuntime.label}`
+        : phase === "fallback"
+          ? "Shell fallback active"
+          : "Runtime status unavailable");
+  const detail =
+    normalizeText(payload?.detail) ||
+    (phase === "running"
+      ? `The ${toolRuntime.label} tmux session is available on ${toolRuntime.launchCommand}.`
+      : `The ${toolRuntime.label} launcher has not reported its runtime state yet.`);
+
+  return {
+    toolId: toolRuntime.id,
+    supported: true,
+    enabled: true,
+    canRelaunch: true,
+    phase,
+    mode,
+    summary,
+    detail,
+    updatedAt: updatedAt || null,
+  };
+}
+
+function readToolRuntimeStatus(toolId, env = process.env) {
+  const toolRuntime = buildToolRuntimeCatalog(env)[toolId];
+  if (!toolRuntime) {
+    const error = new Error(`unknown tool runtime: ${toolId}`);
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (!toolRuntime.enabled) {
+    return {
+      toolId,
+      supported: true,
+      enabled: false,
+      canRelaunch: false,
+      phase: "disabled",
+      mode: "disabled",
+      summary: "Route disabled",
+      detail: `${toolRuntime.label} is disabled in the current gateway runtime.`,
+      updatedAt: null,
+    };
+  }
+
+  if (!fs.existsSync(toolRuntime.statusPath)) {
+    return {
+      toolId,
+      supported: true,
+      enabled: true,
+      canRelaunch: true,
+      phase: "unknown",
+      mode: "unknown",
+      summary: "Waiting for runtime status",
+      detail: `${toolRuntime.label} has not written a runtime status file yet.`,
+      updatedAt: null,
+    };
+  }
+
+  try {
+    const payload = JSON.parse(fs.readFileSync(toolRuntime.statusPath, "utf8"));
+    return normalizeToolRuntimeStatus(toolRuntime, payload);
+  } catch (error) {
+    return {
+      toolId,
+      supported: true,
+      enabled: true,
+      canRelaunch: true,
+      phase: "attention",
+      mode: "unknown",
+      summary: "Status file unreadable",
+      detail: stripAnsi(error?.message || `Could not read ${toolRuntime.statusPath}.`),
+      updatedAt: null,
+    };
+  }
+}
+
+function listToolRuntimeStatuses(env = process.env) {
+  return Object.keys(TOOL_RUNTIME_SPECS).reduce((statuses, toolId) => {
+    statuses[toolId] = readToolRuntimeStatus(toolId, env);
+    return statuses;
+  }, {});
+}
+
+function tmuxSessionExists(sessionName, env = process.env, execFile = execFileSync) {
+  try {
+    execFile("tmux", ["has-session", "-t", sessionName], {
+      encoding: "utf8",
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function relaunchToolRuntime(toolId, env = process.env, execFile = execFileSync) {
+  const toolRuntime = buildToolRuntimeCatalog(env)[toolId];
+  if (!toolRuntime) {
+    const error = new Error(`unknown tool runtime: ${toolId}`);
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (!toolRuntime.enabled) {
+    const error = new Error(`${toolRuntime.label} is disabled in this runtime.`);
+    error.statusCode = 409;
+    throw error;
+  }
+
+  if (tmuxSessionExists(toolRuntime.sessionName, env, execFile)) {
+    execFile(
+      "tmux",
+      ["respawn-pane", "-k", "-t", `${toolRuntime.sessionName}:0.0`, toolRuntime.launchCommand],
+      {
+        encoding: "utf8",
+        env,
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+  } else {
+    execFile(
+      "tmux",
+      ["new-session", "-d", "-s", toolRuntime.sessionName, "-c", toolRuntime.workspaceDir, toolRuntime.launchCommand],
+      {
+        encoding: "utf8",
+        env,
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+  }
+
+  return {
+    toolId,
+    sessionName: toolRuntime.sessionName,
+    workspaceDir: toolRuntime.workspaceDir,
+    summary: `${toolRuntime.label} relaunch requested.`,
+    status: readToolRuntimeStatus(toolId, env),
+  };
 }
 
 function runRestartScript(env) {
@@ -120,6 +325,7 @@ function buildDashboardConfig(env = process.env) {
         path: hermesBaseUrl,
         enabled: envFlagEnabled(env.HERMES_ENABLED ?? "1"),
         help: toolHelp.hermes,
+        supportsRuntimeActions: true,
       },
       {
         id: "terminal",
@@ -147,6 +353,7 @@ function buildDashboardConfig(env = process.env) {
         path: codexBaseUrl,
         enabled: envFlagEnabled(env.CODEX_ENABLED ?? "1"),
         help: toolHelp.codex,
+        supportsRuntimeActions: true,
       },
       {
         id: "claude",
@@ -156,6 +363,7 @@ function buildDashboardConfig(env = process.env) {
         path: claudeBaseUrl,
         enabled: envFlagEnabled(env.CLAUDE_ENABLED ?? "1"),
         help: toolHelp.claude,
+        supportsRuntimeActions: true,
       },
       {
         id: "gemini",
@@ -165,6 +373,7 @@ function buildDashboardConfig(env = process.env) {
         path: geminiBaseUrl,
         enabled: envFlagEnabled(env.GEMINI_ENABLED ?? "1"),
         help: toolHelp.gemini,
+        supportsRuntimeActions: true,
       },
     ],
     utilities: [
@@ -276,6 +485,16 @@ function createServer(options = {}) {
           return sendJson(response, 200, buildDashboardConfig(env));
         }
 
+        if (request.method === "GET" && apiPath === "/tools/status") {
+          return sendJson(response, 200, { statuses: listToolRuntimeStatuses(env) });
+        }
+
+        const relaunchMatch =
+          request.method === "POST" ? apiPath.match(/^\/tools\/([^/]+)\/relaunch$/) : null;
+        if (relaunchMatch) {
+          return sendJson(response, 200, relaunchToolRuntime(decodeURIComponent(relaunchMatch[1]), env));
+        }
+
         if (request.method === "GET" && apiPath === "/utilities/device-approvals") {
           return sendJson(response, 200, { requests: listPendingApprovals(env) });
         }
@@ -343,14 +562,20 @@ if (require.main === module) {
 }
 
 module.exports = {
+  DEFAULT_AGENT_STATUS_DIR,
   DEFAULT_API_BASE_URL,
   DEFAULT_DASHBOARD_BASE_URL,
   DEFAULT_DASHBOARD_PORT,
   buildDashboardConfig,
+  buildToolRuntimeCatalog,
   contentTypeFor,
   createServer,
   listPendingApprovals,
+  listToolRuntimeStatuses,
   normalizeBaseUrl,
+  readToolRuntimeStatus,
+  relaunchToolRuntime,
   safeStaticPath,
   stripBasePath,
+  tmuxSessionExists,
 };
